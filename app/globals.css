@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-surface: #0b1326;
+  --color-surface-container: #171f33;
+  --color-surface-container-low: #131b2e;
+  --color-surface-container-high: #222a3d;
+  --color-surface-container-highest: #2d3449;
+  
+  --color-primary-neon: #00f5ff;
+  --color-secondary-neon: #6001d1;
+  
+  --color-on-surface: #dae2fd;
+  --color-on-surface-variant: #b9caca;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-sans antialiased;
+  }
+}
+
+.neon-glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+}
+
+.neon-text-glow {
+  text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+}
+
+.glass-card {
+  background: rgba(45, 52, 73, 0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(185, 202, 202, 0.1);
+}

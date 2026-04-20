@@ -1,0 +1,438 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  client
+  worker
+  admin
+}
+
+enum WorkerStatus {
+  pending
+  approved
+  rejected
+  banned
+}
+
+enum TransactionType {
+  deposit
+  freeze
+  unfreeze
+  payout_client
+  payout_worker
+  refund
+  withdrawal
+  adjustment
+}
+
+enum PricingLevel {
+  basic
+  silver
+  vip
+}
+
+enum CampaignContentMode {
+  ai
+  custom
+}
+
+enum CampaignStatus {
+  draft
+  pending
+  pending_payment
+  active
+  paused
+  completed
+  cancelled
+}
+
+enum CampaignImageMode {
+  none
+  manual
+  ai
+}
+
+enum ReviewStatus {
+  pending
+  assigned
+  pending_verify
+  verifying
+  holding
+  live
+  dropped
+  cancelled
+  expired
+}
+
+enum WorkerAccountStatus {
+  active
+  cooldown
+  banned
+}
+
+enum NotificationType {
+  campaign_created
+  campaign_completed
+  review_live
+  review_dropped
+  job_available
+  job_claimed
+  job_assigned
+  settlement_complete
+  worker_approved
+  worker_rejected
+  deposit_received
+  withdrawal_processed
+  system_alert
+}
+
+model User {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String       @unique @db.VarChar(255)
+  passwordHash    String       @map("password_hash") @db.Text
+  name            String       @db.VarChar(255)
+  phone           String?      @db.VarChar(20)
+  avatarUrl       String?      @map("avatar_url") @db.Text
+  role            Role
+
+  // Worker-specific
+  workerStatus    WorkerStatus? @map("worker_status")
+  trustScore      Int           @default(100) @map("trust_score")
+  workerBio       String?       @map("worker_bio") @db.Text
+
+  emailVerified   Boolean       @default(false) @map("email_verified")
+  isActive        Boolean       @default(true) @map("is_active")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  wallet                   Wallet?
+  transactionLogs          TransactionLog[]   @relation("UserTransactionLogs")
+  performedTransactionLogs TransactionLog[]   @relation("AdminActionTransactionLogs")
+  campaigns                Campaign[]
+  assignedReviewItems      ReviewItem[]       @relation("WorkerAssignedReviewItems")
+  workerAccounts           WorkerAccount[]
+  notifications            Notification[]
+
+  @@index([role, workerStatus, email])
+  @@map("users")
+}
+
+model Wallet {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String   @unique @map("user_id") @db.Uuid
+  
+  availableBalance Decimal  @default(0.00) @map("available_balance") @db.Decimal(15, 2)
+  frozenBalance    Decimal  @default(0.00) @map("frozen_balance") @db.Decimal(15, 2)
+  totalEarned      Decimal  @default(0.00) @map("total_earned") @db.Decimal(15, 2)
+  totalSpent       Decimal  @default(0.00) @map("total_spent") @db.Decimal(15, 2)
+  totalWithdrawn   Decimal  @default(0.00) @map("total_withdrawn") @db.Decimal(15, 2)
+  
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionLogs  TransactionLog[]
+
+  @@map("wallets")
+}
+
+model TransactionLog {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String          @map("user_id") @db.Uuid
+  walletId         String          @map("wallet_id") @db.Uuid
+
+  type             TransactionType
+  oldBalance       Decimal         @map("old_balance") @db.Decimal(15, 2)
+  newBalance       Decimal         @map("new_balance") @db.Decimal(15, 2)
+  changeAmount     Decimal         @map("change_amount") @db.Decimal(15, 2)
+
+  reason           String          @db.Text
+  referenceType    String?         @map("reference_type") @db.VarChar(50)
+  referenceId      String?         @map("reference_id") @db.Uuid
+  idempotencyKey   String?         @unique @map("idempotency_key") @db.VarChar(255)
+  performedById    String?         @map("performed_by") @db.Uuid
+
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  user             User            @relation("UserTransactionLogs", fields: [userId], references: [id])
+  wallet           Wallet          @relation(fields: [walletId], references: [id])
+  performedBy      User?           @relation("AdminActionTransactionLogs", fields: [performedById], references: [id])
+  settledReviewItems ReviewItem[]  @relation("SettlementTransactionLog")
+
+  @@index([userId, type, createdAt, idempotencyKey])
+  @@map("transaction_logs")
+}
+
+model PricingTier {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  level            PricingLevel
+  name             String       @db.VarChar(100)
+
+  pricePerReview   Decimal      @map("price_per_review") @db.Decimal(10, 2)
+  workerPayout     Decimal      @map("worker_payout") @db.Decimal(10, 2)
+  platformFee      Decimal      @map("platform_fee") @db.Decimal(10, 2)
+
+  minReviews       Int          @default(1) @map("min_reviews")
+  maxReviews       Int          @default(1000) @map("max_reviews")
+  warrantyDays     Int          @default(30) @map("warranty_days")
+  maxRefills       Int          @default(3) @map("max_refills")
+
+  minAccountLevel  Int          @default(1) @map("min_account_level")
+  maxAccountLevel  Int          @default(10) @map("max_account_level")
+
+  isActive         Boolean      @default(true) @map("is_active")
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  campaigns        Campaign[]
+  campaignTierItems CampaignTierItem[]
+  reviewItems       ReviewItem[]
+
+  @@map("pricing_tiers")
+}
+
+model CampaignTierItem {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId       String       @map("campaign_id") @db.Uuid
+  pricingTierId    String       @map("pricing_tier_id") @db.Uuid
+  quantity         Int
+
+  campaign         Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  pricingTier      PricingTier  @relation(fields: [pricingTierId], references: [id])
+
+  @@map("campaign_tier_items")
+}
+
+model MapLocation {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  googlePlaceId    String       @unique @map("google_place_id") @db.VarChar(255)
+  googleMapsUrl    String       @map("google_maps_url") @db.Text
+  name             String?      @db.VarChar(500)
+  address          String?      @db.Text
+  lat              Decimal?     @db.Decimal(10, 7)
+  lng              Decimal?     @db.Decimal(10, 7)
+  currentRating    Decimal?     @map("current_rating") @db.Decimal(3, 2)
+  totalReviews     Int?         @map("total_reviews")
+  cooldownUntil    DateTime?    @map("cooldown_until") @db.Timestamptz
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  campaigns        Campaign[]
+  accountUsage     AccountMapUsage[]
+
+  @@map("map_locations")
+}
+
+model Campaign {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clientId            String              @map("client_id") @db.Uuid
+  mapLocationId       String              @map("map_location_id") @db.Uuid
+  pricingTierId       String?             @map("pricing_tier_id") @db.Uuid
+  name                String?             @db.VarChar(200)
+
+  totalReviews        Int                 @map("total_reviews")
+  target5Star         Int                 @default(0) @map("target_5star")
+  target4Star         Int                 @default(0) @map("target_4star")
+  target3Star         Int                 @default(0) @map("target_3star")
+
+  contentMode         CampaignContentMode @default(ai) @map("content_mode")
+  customContents      String[]            @map("custom_contents") @db.Text
+  aiKeywords          String[]            @map("ai_keywords") @db.Text
+
+  imageMode           CampaignImageMode   @default(none) @map("image_mode")
+  imageMinCount       Int                 @default(0) @map("image_min_count")
+  imageMaxCount       Int                 @default(0) @map("image_max_count")
+  customImages        String[]            @default([]) @map("custom_images") @db.Text
+
+  allowDuplicateContent Boolean           @default(true) @map("allow_duplicate_content")
+  allowDuplicateImages  Boolean           @default(true) @map("allow_duplicate_images")
+
+  totalBudget         Decimal             @map("total_budget") @db.Decimal(15, 2)
+  frozenAmount        Decimal             @default(0) @map("frozen_amount") @db.Decimal(15, 2)
+  settledAmount       Decimal             @default(0) @map("settled_amount") @db.Decimal(15, 2)
+
+  status              CampaignStatus      @default(draft)
+  maxReviewsPerDay    Int                 @default(5) @map("max_reviews_per_day")
+  warrantyUntil       DateTime?           @map("warranty_until") @db.Timestamptz
+
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  client              User                @relation(fields: [clientId], references: [id])
+  mapLocation         MapLocation         @relation(fields: [mapLocationId], references: [id])
+  pricingTier         PricingTier?        @relation(fields: [pricingTierId], references: [id])
+  reviewItems         ReviewItem[]
+  tierItems           CampaignTierItem[]
+
+  @@index([clientId, status, mapLocationId])
+  @@map("campaigns")
+}
+
+model ReviewItem {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId          String        @map("campaign_id") @db.Uuid
+  assignedWorkerId    String?       @map("assigned_worker_id") @db.Uuid
+  assignedAccountId   String?       @map("assigned_account_id") @db.Uuid
+  pricingTierId       String?       @map("pricing_tier_id") @db.Uuid
+
+  targetRating        Int           @map("target_rating")
+  content             String?       @db.Text
+  customContent       String?       @map("custom_content") @db.Text
+  status              ReviewStatus  @default(pending)
+
+  clientPrice         Decimal       @map("client_price") @db.Decimal(10, 2)
+  workerPayout        Decimal       @map("worker_payout") @db.Decimal(10, 2)
+
+  publishedUrl        String?       @map("published_url") @db.Text
+  proofScreenshot     String?       @map("proof_screenshot") @db.Text
+  proofSubmittedAt    DateTime?     @map("proof_submitted_at") @db.Timestamptz
+
+  images              String[]      @default([]) @db.Text
+  customImages        String[]      @default([]) @map("custom_images") @db.Text
+  imageCount          Int           @default(0) @map("image_count")
+
+  scheduledAt         DateTime?     @map("scheduled_at") @db.Timestamptz
+  dispatchedAt        DateTime?     @map("dispatched_at") @db.Timestamptz
+  claimedAt           DateTime?     @map("claimed_at") @db.Timestamptz
+  claimDeadline       DateTime?     @map("claim_deadline") @db.Timestamptz
+  releaseAt           DateTime?     @map("release_at") @db.Timestamptz
+  settledAt           DateTime?     @map("settled_at") @db.Timestamptz
+
+  settled             Boolean       @default(false)
+  settlementTxId      String?       @map("settlement_tx_id") @db.Uuid
+
+  isRefill            Boolean       @default(false) @map("is_refill")
+  refillOfId          String?       @map("refill_of") @db.Uuid
+  refillCount         Int           @default(0) @map("refill_count")
+
+  version             Int           @default(0)
+
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  campaign            Campaign       @relation(fields: [campaignId], references: [id])
+  assignedWorker      User?          @relation("WorkerAssignedReviewItems", fields: [assignedWorkerId], references: [id])
+  assignedAccount     WorkerAccount? @relation(fields: [assignedAccountId], references: [id])
+  pricingTier         PricingTier?   @relation(fields: [pricingTierId], references: [id])
+  settlementTx        TransactionLog? @relation("SettlementTransactionLog", fields: [settlementTxId], references: [id])
+  refillOf            ReviewItem?    @relation("ReviewItemRefills", fields: [refillOfId], references: [id])
+  refills             ReviewItem[]   @relation("ReviewItemRefills")
+  scanLogs            ScanLog[]
+
+  @@index([campaignId, status, assignedWorkerId, scheduledAt])
+  @@index([status, releaseAt, settled])
+  @@map("review_items")
+}
+
+model SystemConfig {
+  id                        String   @id @default("default")
+  holdingDays               Int      @default(7) @map("holding_days")
+  jobTimeoutMinutes         Int      @default(30) @map("job_timeout_minutes")
+  bankName                  String?  @map("bank_name") @db.VarChar(255)
+  bankAccount               String?  @map("bank_account") @db.VarChar(50)
+  bankAccountHolder         String?  @map("bank_account_holder") @db.VarChar(255)
+  bankQrUrl                 String?  @map("bank_qr_url") @db.Text
+  dispatchMode              String   @default("manual") @map("dispatch_mode") @db.VarChar(20)
+  autoAssignAlgorithm       String   @default("trust_score") @map("auto_assign_algorithm") @db.VarChar(30)
+  autoAssignIntervalMinutes Int      @default(5) @map("auto_assign_interval_minutes")
+  // Scanner config
+  scanEnabled               Boolean  @default(false) @map("scan_enabled")
+  scanTimeHour              Int      @default(9) @map("scan_time_hour")
+  scanTimeMinute            Int      @default(0) @map("scan_time_minute")
+  scanDelayMs               Int      @default(3000) @map("scan_delay_ms")
+  scanProxyEnabled          Boolean  @default(false) @map("scan_proxy_enabled")
+  scanProxyUrl              String?  @map("scan_proxy_url") @db.Text
+  updatedAt                 DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("system_config")
+}
+
+enum ScanStatus {
+  success
+  failed
+  error
+  pending
+}
+
+model ScanLog {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reviewItemId    String     @map("review_item_id") @db.Uuid
+  scannedAt       DateTime   @default(now()) @map("scanned_at") @db.Timestamptz
+  status          ScanStatus @default(pending)
+  foundRating     Int?       @map("found_rating")
+  reviewCount     Int?       @map("review_count")
+  errorMessage    String?    @map("error_message") @db.Text
+  scanDurationMs  Int?       @map("scan_duration_ms")
+  rawResponse     String?    @map("raw_response") @db.Text
+
+  reviewItem      ReviewItem @relation(fields: [reviewItemId], references: [id], onDelete: Cascade)
+
+  @@index([reviewItemId, scannedAt])
+  @@index([status, scannedAt])
+  @@map("scan_logs")
+}
+
+model WorkerAccount {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workerId          String              @map("worker_id") @db.Uuid
+
+  accountName       String              @map("account_name") @db.VarChar(255)
+  accountEmail      String?             @map("account_email") @db.VarChar(255)
+  profileUrl        String?             @map("profile_url") @db.Text
+  level             Int
+  
+  trustScore        Int                 @default(100) @map("trust_score")
+  status            WorkerAccountStatus @default(active)
+  
+  totalJobsDone     Int                 @default(0) @map("total_jobs_done")
+  totalJobsFailed   Int                 @default(0) @map("total_jobs_failed")
+  
+  lastJobAt         DateTime?           @map("last_job_at") @db.Timestamptz
+  nextAvailableAt   DateTime?           @map("next_available_at") @db.Timestamptz
+  maxJobsPerDay     Int                 @default(3) @map("max_jobs_per_day")
+  
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  worker            User                @relation(fields: [workerId], references: [id])
+  reviewItems       ReviewItem[]
+  mapUsage          AccountMapUsage[]
+
+  @@index([workerId, level, status, nextAvailableAt])
+  @@map("worker_accounts")
+}
+
+model AccountMapUsage {
+  accountId         String       @map("account_id") @db.Uuid
+  mapLocationId     String       @map("map_location_id") @db.Uuid
+  usedAt            DateTime     @default(now()) @map("used_at") @db.Timestamptz
+
+  account           WorkerAccount @relation(fields: [accountId], references: [id])
+  mapLocation       MapLocation   @relation(fields: [mapLocationId], references: [id])
+
+  @@id([accountId, mapLocationId])
+  @@map("account_map_usage")
+}
+
+model Notification {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String           @map("user_id") @db.Uuid
+  
+  type              NotificationType
+  title             String           @db.VarChar(255)
+  message           String           @db.Text
+  referenceType     String?          @map("reference_type") @db.VarChar(50)
+  referenceId       String?          @map("reference_id") @db.Uuid
+  
+  isRead            Boolean          @default(false) @map("is_read")
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  user              User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
