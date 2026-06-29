@@ -67,7 +67,7 @@ export default function AdminSettingsPage() {
     <div className="p-6 md:p-10 max-w-4xl mx-auto pb-32">
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold text-on-surface mb-2 font-headline">Cài đặt hệ thống</h1>
-        <p className="text-on-surface-variant">Cấu hình chung cho toàn bộ hệ thống MapBoost.</p>
+        <p className="text-on-surface-variant">Cấu hình chung cho toàn bộ hệ thống MapLocals.</p>
       </div>
 
       <div className="space-y-8">

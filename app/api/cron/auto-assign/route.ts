@@ -44,7 +44,10 @@ export async function GET(req: Request) {
           where: { status: 'active' },
           include: { mapUsage: { select: { mapLocationId: true } } }
         },
-        _count: { select: { assignedJobs: { where: { status: { in: ['in_progress', 'pending_verify'] } } } } }
+        assignedReviewItems: {
+          where: { status: { in: ['assigned', 'pending_verify', 'verifying', 'holding'] } },
+          select: { id: true }
+        }
       }
     });
 
@@ -71,7 +74,7 @@ export async function GET(req: Request) {
       if (algorithm === 'trust_score') {
         sorted.sort((a, b) => (b.trustScore ?? 0) - (a.trustScore ?? 0));
       } else if (algorithm === 'least_jobs') {
-        sorted.sort((a, b) => (a._count.assignedJobs) - (b._count.assignedJobs));
+        sorted.sort((a, b) => a.assignedReviewItems.length - b.assignedReviewItems.length);
       } else if (algorithm === 'highest_level') {
         sorted.sort((a, b) => {
           const aMax = Math.max(...a.workerAccounts.map(acc => acc.level));
@@ -98,11 +101,10 @@ export async function GET(req: Request) {
           await tx.reviewItem.update({
             where: { id: job.id, status: 'pending' },
             data: {
-              status: 'in_progress',
+              status: 'assigned',
               assignedWorkerId: chosen.id,
               assignedAccountId: chosenAccount.id,
-              assignedAt: new Date(),
-              expiresAt: new Date(Date.now() + (config.jobTimeoutMinutes || 30) * 60 * 1000)
+              claimDeadline: new Date(Date.now() + (config.jobTimeoutMinutes || 30) * 60 * 1000)
             }
           });
 

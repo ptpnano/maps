@@ -240,7 +240,7 @@ export default function SettingsPage() {
                 <Wallet size={24} />
               </div>
               <div className="flex-1 text-left">
-                <h3 className="text-on-surface font-bold">Ví MapBoost</h3>
+                <h3 className="text-on-surface font-bold">Ví MapLocals</h3>
                 <p className="text-xs text-on-surface-variant">Số dư, lịch sử giao dịch</p>
               </div>
               <ChevronRight className="text-on-surface-variant group-hover:translate-x-1 transition-transform" size={20} />

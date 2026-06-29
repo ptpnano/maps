@@ -82,7 +82,7 @@ export default function RegisterContent() {
       >
         <Link href="/">
           <h2 className="text-primary-neon font-headline text-2xl font-black tracking-tighter drop-shadow-[0_0_8px_rgba(0,245,255,0.4)] mb-2 italic">
-            MapBoost
+            MapLocals
           </h2>
         </Link>
         <div className="flex items-center justify-center gap-2">

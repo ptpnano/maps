@@ -12,7 +12,7 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
 
     // Verify account belongs to worker
     const account = await db.workerAccount.findFirst({
-      where: { id: params.id, userId: session.user.id }
+      where: { id: params.id, workerId: session.user.id }
     });
     if (!account) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 });

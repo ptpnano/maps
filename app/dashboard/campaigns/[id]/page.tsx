@@ -799,7 +799,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
           <div className="bg-gradient-to-b from-surface-container to-surface-container-lowest rounded-2xl p-6 border border-white/5 sticky top-24">
             <div className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/10 text-blue-400 mb-6 mx-auto"><ShieldCheck size={32} /></div>
             <h3 className="text-center text-xl font-bold text-on-surface mb-2">Thanh toán An Toàn</h3>
-            <p className="text-center text-on-surface-variant text-sm mb-6">Số tiền đang được đóng băng. MapBoost Neon chỉ giải ngân cho CTV khi review ổn định trên Maps sau 48h.</p>
+            <p className="text-center text-on-surface-variant text-sm mb-6">Số tiền đang được đóng băng. MapLocals chỉ giải ngân cho CTV khi review ổn định trên Maps sau 48h.</p>
             <div className="bg-surface-container-high rounded-xl p-4 mb-6 space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-on-surface-variant">Tổng ngân sách</span>

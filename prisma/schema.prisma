@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -92,6 +93,24 @@ enum NotificationType {
   system_alert
 }
 
+enum YoutubeServiceType {
+  like
+  view
+  comment
+  sub
+}
+
+enum YoutubeOrderStatus {
+  pending_review
+  queued
+  running
+  partial
+  completed
+  rejected
+  cancelled
+  failed
+}
+
 model User {
   id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email           String       @unique @db.VarChar(255)
@@ -115,6 +134,9 @@ model User {
   transactionLogs          TransactionLog[]   @relation("UserTransactionLogs")
   performedTransactionLogs TransactionLog[]   @relation("AdminActionTransactionLogs")
   campaigns                Campaign[]
+  youtubeOrders            YoutubeOrder[]     @relation("ClientYoutubeOrders")
+  approvedYoutubeOrders    YoutubeOrder[]     @relation("AdminApprovedYoutubeOrders")
+  youtubeOrderEvents       YoutubeOrderEvent[] @relation("YoutubeOrderEventActors")
   assignedReviewItems      ReviewItem[]       @relation("WorkerAssignedReviewItems")
   workerAccounts           WorkerAccount[]
   notifications            Notification[]
@@ -346,6 +368,14 @@ model SystemConfig {
   scanDelayMs               Int      @default(3000) @map("scan_delay_ms")
   scanProxyEnabled          Boolean  @default(false) @map("scan_proxy_enabled")
   scanProxyUrl              String?  @map("scan_proxy_url") @db.Text
+  telegramBotToken          String?  @map("telegram_bot_token") @db.Text
+  telegramChatId            String?  @map("telegram_chat_id") @db.VarChar(100)
+  telegramOrderNotifications Boolean @default(false) @map("telegram_order_notifications")
+  youtubeOrderTimeoutHours  Int      @default(24) @map("youtube_order_timeout_hours")
+  youtubeOverdueScanLastAt  DateTime? @map("youtube_overdue_scan_last_at") @db.Timestamptz
+  youtubeOverdueScanSource  String?  @map("youtube_overdue_scan_source") @db.VarChar(30)
+  youtubeOverdueScanStatus  String?  @map("youtube_overdue_scan_status") @db.VarChar(30)
+  youtubeOverdueScanCompleted Int    @default(0) @map("youtube_overdue_scan_completed")
   updatedAt                 DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("system_config")
@@ -435,4 +465,238 @@ model Notification {
 
   @@index([userId, isRead, createdAt])
   @@map("notifications")
+}
+
+model YoutubeServiceConfig {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  serviceType           YoutubeServiceType @unique @map("service_type")
+  name                  String             @db.VarChar(100)
+  isActive              Boolean            @default(true) @map("is_active")
+  minQuantity           Int                @default(1) @map("min_quantity")
+  maxQuantity           Int                @default(10000) @map("max_quantity")
+  pricePerUnit          Decimal            @default(1.00) @map("price_per_unit") @db.Decimal(15, 2)
+  requireApproval       Boolean            @default(true) @map("require_approval")
+  overdeliveryPercent   Decimal            @default(0.00) @map("overdelivery_percent") @db.Decimal(5, 2)
+  defaultQuantity       Int                @default(100) @map("default_quantity")
+  defaultConfig         Json               @default("{}") @map("default_config")
+  telegramEnabled       Boolean            @default(false) @map("telegram_enabled")
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  orders                YoutubeOrder[]
+
+  @@map("youtube_service_configs")
+}
+
+model YoutubeOrder {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clientId              String             @map("client_id") @db.Uuid
+  serviceType           YoutubeServiceType @map("service_type")
+  serviceConfigId       String             @map("service_config_id") @db.Uuid
+  status                YoutubeOrderStatus @default(pending_review)
+  totalQuantity         Int                @map("total_quantity")
+  totalExecutionQuantity Int               @map("total_execution_quantity")
+  totalCost             Decimal            @map("total_cost") @db.Decimal(15, 2)
+  frozenAmount          Decimal            @default(0.00) @map("frozen_amount") @db.Decimal(15, 2)
+  settledAmount         Decimal            @default(0.00) @map("settled_amount") @db.Decimal(15, 2)
+  note                  String?            @db.Text
+  commentLines          String[]           @default([]) @map("comment_lines") @db.Text
+  allowDuplicateComments Boolean           @default(true) @map("allow_duplicate_comments")
+  ytbSyncStatus         String?            @map("ytb_sync_status") @db.VarChar(50)
+  ytbLastSyncAt         DateTime?          @map("ytb_last_sync_at") @db.Timestamptz
+  ytbLastError          String?            @map("ytb_last_error") @db.Text
+  approvedById          String?            @map("approved_by_id") @db.Uuid
+  approvedAt            DateTime?          @map("approved_at") @db.Timestamptz
+  rejectionReason       String?            @map("rejection_reason") @db.Text
+  isCompensation        Boolean            @default(false) @map("is_compensation")
+  compensationForId     String?            @map("compensation_for_id") @db.Uuid
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  client                User               @relation("ClientYoutubeOrders", fields: [clientId], references: [id])
+  serviceConfig         YoutubeServiceConfig @relation(fields: [serviceConfigId], references: [id])
+  approvedBy            User?              @relation("AdminApprovedYoutubeOrders", fields: [approvedById], references: [id])
+  compensationFor       YoutubeOrder?      @relation("YoutubeOrderCompensations", fields: [compensationForId], references: [id])
+  compensations         YoutubeOrder[]     @relation("YoutubeOrderCompensations")
+  targets               YoutubeOrderTarget[]
+  events                YoutubeOrderEvent[]
+  workerJobLogs         YoutubeWorkerJobLog[]
+  workerClaimTargets    YoutubeWorkerClaimTarget[]
+  workerActionHistories YoutubeWorkerActionHistory[]
+
+  @@index([clientId, serviceType, status, createdAt])
+  @@index([status, createdAt])
+  @@map("youtube_orders")
+}
+
+model YoutubeOrderTarget {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId               String             @map("order_id") @db.Uuid
+  serviceType           YoutubeServiceType @map("service_type")
+  input                 String             @db.Text
+  targetKey             String             @map("target_key") @db.VarChar(255)
+  targetUrl             String             @map("target_url") @db.Text
+  quantity              Int
+  executionQuantity     Int                @map("execution_quantity")
+  deliveredQuantity     Int                @default(0) @map("delivered_quantity")
+  isPaused              Boolean            @default(false) @map("is_paused")
+  ytbStatus             String?            @map("ytb_status") @db.VarChar(50)
+  ytbQuotaDone          Int                @default(0) @map("ytb_quota_done")
+  ytbQuotaTotal         Int                @default(0) @map("ytb_quota_total")
+  ytbLastDetail         Json?              @map("ytb_last_detail")
+  ytbLastError          String?            @map("ytb_last_error") @db.Text
+  enqueuedAt            DateTime?          @map("enqueued_at") @db.Timestamptz
+  lastSyncedAt          DateTime?          @map("last_synced_at") @db.Timestamptz
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  order                 YoutubeOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  workerJobLogs         YoutubeWorkerJobLog[]
+  workerClaimTargets    YoutubeWorkerClaimTarget[]
+  workerActionHistories YoutubeWorkerActionHistory[]
+
+  @@unique([orderId, targetKey])
+  @@index([serviceType, targetKey])
+  @@index([ytbStatus, lastSyncedAt])
+  @@map("youtube_order_targets")
+}
+
+model YoutubeWorker {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workerKey             String    @unique @map("worker_key") @db.VarChar(120)
+  apiKeyHash            String?   @map("api_key_hash") @db.VarChar(128)
+  apiKeyPrefix          String?   @map("api_key_prefix") @db.VarChar(24)
+  label                 String?   @db.VarChar(255)
+  status                String    @default("online") @db.VarChar(50)
+  capabilities          String[]  @default([])
+  metadata              Json      @default("{}")
+  lastSeenAt            DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  jobLogs               YoutubeWorkerJobLog[]
+  claims                YoutubeWorkerClaim[]
+
+  @@index([apiKeyHash])
+  @@index([status, lastSeenAt])
+  @@map("youtube_workers")
+}
+
+model YoutubeWorkerClaim {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workerId              String?   @map("worker_id") @db.Uuid
+  workerKey             String    @map("worker_key") @db.VarChar(120)
+  status                String    @default("claimed") @db.VarChar(50)
+  leaseUntil            DateTime  @map("lease_until") @db.Timestamptz
+  totalClaimed          Int       @default(0) @map("total_claimed")
+  totalSuccess          Int       @default(0) @map("total_success")
+  totalFailed           Int       @default(0) @map("total_failed")
+  metadata              Json      @default("{}")
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  worker                YoutubeWorker? @relation(fields: [workerId], references: [id], onDelete: SetNull)
+  targets               YoutubeWorkerClaimTarget[]
+
+  @@index([workerKey, createdAt])
+  @@index([status, leaseUntil])
+  @@map("youtube_worker_claims")
+}
+
+model YoutubeWorkerClaimTarget {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  claimId               String             @map("claim_id") @db.Uuid
+  workerKey             String             @map("worker_key") @db.VarChar(120)
+  orderId               String             @map("order_id") @db.Uuid
+  targetId              String             @map("target_id") @db.Uuid
+  serviceType           YoutubeServiceType @map("service_type")
+  targetKey             String             @map("target_key") @db.VarChar(255)
+  targetUrl             String             @map("target_url") @db.Text
+  status                String             @default("claimed") @db.VarChar(50)
+  claimedQuantity       Int                @map("claimed_quantity")
+  successCount          Int                @default(0) @map("success_count")
+  failedCount           Int                @default(0) @map("failed_count")
+  leaseUntil            DateTime           @map("lease_until") @db.Timestamptz
+  lastError             String?            @map("last_error") @db.Text
+  detail                Json               @default("{}")
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  claim                 YoutubeWorkerClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  order                 YoutubeOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  target                YoutubeOrderTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  histories             YoutubeWorkerActionHistory[]
+
+  @@index([workerKey, createdAt])
+  @@index([targetId, status, leaseUntil])
+  @@index([status, leaseUntil])
+  @@map("youtube_worker_claim_targets")
+}
+
+model YoutubeWorkerActionHistory {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  claimTargetId         String?            @map("claim_target_id") @db.Uuid
+  orderId               String?            @map("order_id") @db.Uuid
+  targetId              String?            @map("target_id") @db.Uuid
+  workerKey             String             @map("worker_key") @db.VarChar(120)
+  serviceType           YoutubeServiceType? @map("service_type")
+  targetKey             String?            @map("target_key") @db.VarChar(255)
+  gmail                 String?            @db.VarChar(255)
+  ip                    String?            @db.VarChar(100)
+  status                String             @db.VarChar(50)
+  actedAt               DateTime           @map("acted_at") @db.Timestamptz
+  metadata              Json               @default("{}")
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz
+
+  claimTarget           YoutubeWorkerClaimTarget? @relation(fields: [claimTargetId], references: [id], onDelete: SetNull)
+  order                 YoutubeOrder?      @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  target                YoutubeOrderTarget? @relation(fields: [targetId], references: [id], onDelete: SetNull)
+
+  @@index([workerKey, actedAt])
+  @@index([targetId, actedAt])
+  @@index([gmail, targetKey])
+  @@map("youtube_worker_action_histories")
+}
+
+model YoutubeWorkerJobLog {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workerId              String?            @map("worker_id") @db.Uuid
+  workerKey             String             @map("worker_key") @db.VarChar(120)
+  orderId               String?            @map("order_id") @db.Uuid
+  targetId              String?            @map("target_id") @db.Uuid
+  serviceType           YoutubeServiceType? @map("service_type")
+  targetKey             String?            @map("target_key") @db.VarChar(255)
+  action                String             @db.VarChar(50)
+  status                String?            @db.VarChar(50)
+  quotaDone             Int?               @map("quota_done")
+  quotaTotal            Int?               @map("quota_total")
+  error                 String?            @db.Text
+  detail                Json               @default("{}")
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz
+
+  worker                YoutubeWorker?     @relation(fields: [workerId], references: [id], onDelete: SetNull)
+  order                 YoutubeOrder?      @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  target                YoutubeOrderTarget? @relation(fields: [targetId], references: [id], onDelete: SetNull)
+
+  @@index([workerKey, createdAt])
+  @@index([targetId, createdAt])
+  @@index([action, status, createdAt])
+  @@map("youtube_worker_job_logs")
+}
+
+model YoutubeOrderEvent {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId               String             @map("order_id") @db.Uuid
+  actorId               String?            @map("actor_id") @db.Uuid
+  type                  String             @db.VarChar(80)
+  message               String             @db.Text
+  metadata              Json               @default("{}")
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz
+
+  order                 YoutubeOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actor                 User?              @relation("YoutubeOrderEventActors", fields: [actorId], references: [id])
+
+  @@index([orderId, createdAt])
+  @@index([type, createdAt])
+  @@map("youtube_order_events")
 }

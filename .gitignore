@@ -31,6 +31,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# deploy artifacts
+maplocals-deploy.tar.gz
+server-setup.sh
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

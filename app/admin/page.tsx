@@ -47,7 +47,7 @@ export default function AdminDashboardPage() {
     <main className="pt-24 px-6 pb-32 max-w-7xl mx-auto space-y-8">
       <header>
         <h1 className="text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight font-headline">Admin Dashboard</h1>
-        <p className="text-on-surface-variant mt-1">Tổng quan hệ thống MapBoost Neon</p>
+        <p className="text-on-surface-variant mt-1">Tổng quan hệ thống MapLocals</p>
       </header>
 
       {/* Stats Cards */}

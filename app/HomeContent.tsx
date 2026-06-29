@@ -146,7 +146,7 @@ export default function HomeContent() {
             <div className="relative glass-card p-4 rounded-[2.5rem] border border-white/10 shadow-2xl">
               <img 
                 src="https://picsum.photos/seed/dashboard/800/600" 
-                alt="MapBoost Dashboard Preview" 
+                alt="MapLocals Dashboard Preview" 
                 className="rounded-[2rem] w-full shadow-2xl"
                 loading="lazy"
                 referrerPolicy="no-referrer"
@@ -173,7 +173,7 @@ export default function HomeContent() {
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary-neon/10 to-transparent z-[-1]"></div>
           <h2 className="text-4xl md:text-6xl font-headline font-black text-on-surface mb-8">Sẵn Sàng Để <span className="text-primary-neon">Phá Đảo</span> Google Maps?</h2>
           <p className="text-xl text-on-surface-variant mb-12 max-w-2xl mx-auto">
-            Đừng để đối thủ cướp mất khách hàng tiềm năng của bạn. Bắt đầu tối ưu ngay hôm nay với MapBoost Neon.
+            Đừng để đối thủ cướp mất khách hàng tiềm năng của bạn. Bắt đầu tối ưu ngay hôm nay với MapLocals.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <Link 

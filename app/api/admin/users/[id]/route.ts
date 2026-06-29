@@ -27,7 +27,7 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
           },
           orderBy: { createdAt: 'desc' }
         },
-        wallet: { select: { balance: true } },
+        wallet: { select: { availableBalance: true } },
         _count: { select: { campaigns: true } },
       }
     });

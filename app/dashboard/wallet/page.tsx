@@ -45,7 +45,7 @@ export default function WalletPage() {
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto pb-32">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-on-surface mb-2 font-headline">Ví MapBoost</h1>
+        <h1 className="text-3xl font-extrabold text-on-surface mb-2 font-headline">Ví MapLocals</h1>
         <p className="text-on-surface-variant">Quản lý số dư, tiền tạm giữ và lịch sử giao dịch.</p>
       </div>
 
@@ -133,7 +133,7 @@ export default function WalletPage() {
                     </div>
                     <div className="mt-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs">
                       <p className="font-bold mb-1">Nội dung chuyển khoản:</p>
-                      <p className="font-mono text-sm">MAPBOOST {session?.user?.id?.split('-')[0] || ''}</p>
+                      <p className="font-mono text-sm">MAPLOCALS {session?.user?.id?.split('-')[0] || ''}</p>
                     </div>
                     <p className="text-[10px] text-on-surface-variant">Admin sẽ cộng tiền vào ví sau khi xác nhận giao dịch. Thường trong 5-30 phút.</p>
                   </div>

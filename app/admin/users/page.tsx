@@ -277,12 +277,18 @@ export default function AdminUsersPage() {
                                       )}
                                     </td>
                                     <td className="p-3">
-                                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${acc.status === 'active' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>{acc.status}</span>
+                                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                                        acc.status === 'active'
+                                          ? 'bg-green-500/10 text-green-400'
+                                          : acc.status === 'banned'
+                                            ? 'bg-red-500/10 text-red-400'
+                                            : 'bg-yellow-500/10 text-yellow-400'
+                                      }`}>{acc.status}</span>
                                     </td>
                                     <td className="p-3 text-on-surface">{acc._count?.reviewItems ?? 0}</td>
                                     <td className="p-3">
                                       <button
-                                        onClick={() => handleSaveAccount(user.id, acc.id, 'status', acc.status === 'active' ? 'suspended' : 'active')}
+                                        onClick={() => handleSaveAccount(user.id, acc.id, 'status', acc.status === 'active' ? 'banned' : 'active')}
                                         className={`px-2 py-1 rounded text-[9px] font-bold ${acc.status === 'active' ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'} transition-colors`}
                                       >
                                         {acc.status === 'active' ? 'Khóa TK' : 'Mở TK'}

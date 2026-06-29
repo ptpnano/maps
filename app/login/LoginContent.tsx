@@ -60,7 +60,7 @@ export default function LoginContent() {
       >
         <Link href="/" className="inline-block">
           <h2 className="text-primary-neon font-headline text-3xl font-black tracking-tighter drop-shadow-[0_0_10px_rgba(0,245,255,0.5)] mb-2 italic">
-            MapBoost
+            MapLocals
           </h2>
         </Link>
         <p className="text-on-surface-variant text-xs uppercase tracking-[0.3em] font-bold">Authority Booster</p>

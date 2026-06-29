@@ -170,7 +170,7 @@ export default function AuditContent() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent"></div>
             <div className="absolute bottom-4 left-6">
-              <p className="text-primary-neon font-black text-xl italic tracking-tighter">#MapBoostExpert</p>
+              <p className="text-primary-neon font-black text-xl italic tracking-tighter">#MapLocalsExpert</p>
             </div>
           </div>
         </motion.div>

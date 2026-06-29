@@ -21,6 +21,19 @@
   body {
     @apply bg-surface text-on-surface font-sans antialiased;
   }
+
+  button,
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 .neon-glow-cyan {

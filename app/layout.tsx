@@ -22,24 +22,24 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'MapBoost Neon - Dịch vụ review google maps hàng đầu',
-    template: '%s | MapBoost Neon',
+    default: 'MapLocals - Dịch vụ review google maps hàng đầu',
+    template: '%s | MapLocals',
   },
   description:
-    'MapBoost Neon cung cấp giải pháp tối ưu Google Maps, tăng đánh giá 5 sao, cải thiện uy tín và bứt phá doanh thu cho doanh nghiệp của bạn.',
+    'MapLocals cung cấp giải pháp tối ưu Google Maps, tăng đánh giá 5 sao, cải thiện uy tín và bứt phá doanh thu cho doanh nghiệp của bạn.',
   keywords:
-    'Dịch vụ review google maps, tăng đánh giá google maps, tối ưu seo google maps, mapboost neon',
+    'Dịch vụ review google maps, tăng đánh giá google maps, tối ưu seo google maps, maplocals',
   openGraph: {
     type: 'website',
     locale: 'vi_VN',
-    url: 'https://mapboost-neon.com',
-    siteName: 'MapBoost Neon',
-    title: 'MapBoost Neon - Dịch vụ review google maps hàng đầu',
+    url: 'https://maplocals.net',
+    siteName: 'MapLocals',
+    title: 'MapLocals - Dịch vụ review google maps hàng đầu',
     description:
-      'MapBoost Neon cung cấp giải pháp tối ưu Google Maps, tăng đánh giá 5 sao, cải thiện uy tín và bứt phá doanh thu cho doanh nghiệp của bạn.',
+      'MapLocals cung cấp giải pháp tối ưu Google Maps, tăng đánh giá 5 sao, cải thiện uy tín và bứt phá doanh thu cho doanh nghiệp của bạn.',
     images: [
       {
-        url: 'https://picsum.photos/seed/mapboost/1200/630',
+        url: 'https://maplocals.net/og-image.png',
         width: 1200,
         height: 630,
       },
@@ -47,10 +47,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MapBoost Neon - Dịch vụ review google maps hàng đầu',
+    title: 'MapLocals - Dịch vụ review google maps hàng đầu',
     description:
-      'MapBoost Neon cung cấp giải pháp tối ưu Google Maps, tăng đánh giá 5 sao, cải thiện uy tín và bứt phá doanh thu cho doanh nghiệp của bạn.',
-    images: ['https://picsum.photos/seed/mapboost/1200/630'],
+      'MapLocals cung cấp giải pháp tối ưu Google Maps, tăng đánh giá 5 sao, cải thiện uy tín và bứt phá doanh thu cho doanh nghiệp của bạn.',
+    images: ['https://maplocals.net/og-image.png'],
   },
 };
 

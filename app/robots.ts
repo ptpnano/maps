@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://mapboost-neon.com/sitemap.xml',
+    sitemap: 'https://maplocals.net/sitemap.xml',
   };
 }

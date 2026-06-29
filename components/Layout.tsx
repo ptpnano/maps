@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Star, Menu, X, Home, CreditCard, LayoutGrid, Mail, User, Megaphone, BarChart3, Image, Settings, Wallet } from 'lucide-react';
+import { Star, Menu, X, Home, CreditCard, LayoutGrid, Mail, User, Megaphone, BarChart3, Image, Settings, Wallet, Youtube } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -29,7 +29,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2">
           <Star className="text-primary-neon fill-primary-neon" size={24} />
-          <span className="text-2xl font-black italic tracking-tighter text-primary-neon font-headline">MapBoost</span>
+          <span className="text-2xl font-black italic tracking-tighter text-primary-neon font-headline">MapLocals</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -109,12 +109,12 @@ export function Footer() {
     <footer className="bg-surface-container-low border-t border-white/5 py-16 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
         <div>
-          <div className="text-2xl font-black text-primary-neon italic mb-6">MapBoost Neon</div>
+          <div className="text-2xl font-black text-primary-neon italic mb-6">MapLocals</div>
           <p className="text-on-surface-variant max-w-sm mb-8">
             Giải pháp tối ưu Google Maps hàng đầu, giúp doanh nghiệp bứt phá doanh thu nhờ niềm tin từ khách hàng.
           </p>
           <div className="text-xs uppercase tracking-widest text-on-surface-variant/50">
-            © 2024 MapBoost Neon. Elevating local authority.
+            © 2026 MapLocals. Growing local businesses.
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 

@@ -33,7 +33,7 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
 const updateSchema = z.object({
   accountName: z.string().min(1).max(200).optional(),
   level: z.number().int().min(1).max(10).optional(),
-  status: z.enum(['active', 'cooldown', 'suspended']).optional(),
+  status: z.enum(['active', 'cooldown', 'banned']).optional(),
 });
 
 export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {

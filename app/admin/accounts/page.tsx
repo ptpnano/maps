@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   active: { label: 'Hoạt động', cls: 'bg-green-500/10 text-green-400' },
   cooldown: { label: 'Tạm dừng', cls: 'bg-yellow-500/10 text-yellow-400' },
-  suspended: { label: 'Bị khoá', cls: 'bg-red-500/10 text-red-400' },
+  banned: { label: 'Bị khoá', cls: 'bg-red-500/10 text-red-400' },
 };
 
 export default function AdminAccountsPage() {
@@ -62,7 +62,7 @@ export default function AdminAccountsPage() {
   };
 
   const handleToggleStatus = async (acc: any) => {
-    const newStatus = acc.status === 'active' ? 'suspended' : 'active';
+    const newStatus = acc.status === 'active' ? 'banned' : 'active';
     await handleSave(acc.id, 'status', newStatus);
   };
 
@@ -70,7 +70,7 @@ export default function AdminAccountsPage() {
     { key: '', label: 'Tất cả' },
     { key: 'active', label: 'Hoạt động' },
     { key: 'cooldown', label: 'Tạm dừng' },
-    { key: 'suspended', label: 'Bị khoá' },
+    { key: 'banned', label: 'Bị khoá' },
   ];
 
   return (
@@ -136,7 +136,7 @@ export default function AdminAccountsPage() {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {accounts.map((acc: any) => {
-                  const st = STATUS_LABELS[acc.status] || STATUS_LABELS.suspended;
+                  const st = STATUS_LABELS[acc.status] || STATUS_LABELS.banned;
                   const isEditingName = editing?.id === acc.id && editing.field === 'accountName';
                   const isEditingLevel = editing?.id === acc.id && editing.field === 'level';
                   return (
